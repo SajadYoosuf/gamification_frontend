@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../model/student_model.dart';
 import '../services/student_service.dart';
 
@@ -40,6 +41,10 @@ class StudentProvider extends ChangeNotifier {
   List<Datum> get filtered => List.unmodifiable(_filtered);
   bool get isSubmitting => _isSubmitting;
 
+  // Currently logged-in student (loaded from server using stored id)
+  Datum? _currentStudent;
+  Datum? get currentStudent => _currentStudent;
+
   Future<void> fetchStudents() async {
     _setLoading(true);
     _error = null;
@@ -77,6 +82,50 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
+  /// Load the currently-logged-in student's details by reading the stored
+  /// `currentUserId` from SharedPreferences and calling the server.
+  Future<void> fetchCurrentStudent() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final id = prefs.getString('currentUserId') ?? '';
+      if (id.isEmpty) return;
+
+      final resp = await StudentService.getStudentById(id);
+      print(resp);
+      dynamic body = resp;
+      Map<String, dynamic>? jsonBody;
+      if (body is String) {
+        try {
+          jsonBody = json.decode(body) as Map<String, dynamic>;
+        } catch (_) {
+          jsonBody = null;
+        }
+      } else if (body is Map<String, dynamic>) {
+        jsonBody = body;
+      } else if (body is Map) {
+        jsonBody = Map<String, dynamic>.from(body);
+      }
+
+      if (jsonBody != null) {
+        // common API shape: { data: { ...student... } }
+        final data = jsonBody['data'] ?? jsonBody;
+        if (data is Map<String, dynamic>) {
+          _currentStudent = Datum.fromJson(data);
+          notifyListeners();
+          return;
+        }
+      }
+
+      // fallback: if resp itself is a map representing the student
+      if (resp is Map<String, dynamic>) {
+        _currentStudent = Datum.fromJson(resp);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch current student: $e');
+    }
+  }
+
   /// Initialize form controllers (for add or edit)
   void initForm([Datum? d]) {
     nameController.text = d?.fullname ?? '';
@@ -87,7 +136,27 @@ class StudentProvider extends ChangeNotifier {
     dobController.text = d?.dob ?? '';
     aadharController.text = d?.aadhar ?? '';
     panController.text = d?.pan ?? '';
-    joiningDateController.text = d?.joiningDate.toIso8601String() ?? '';
+    // Display joining date in human readable format if available
+    if (d?.joiningDate != null) {
+      try {
+        final raw = d!.joiningDate as dynamic;
+        DateTime? parsed;
+        if (raw is DateTime) {
+          parsed = raw;
+        } else if (raw is String) {
+          parsed = DateTime.tryParse(raw);
+        }
+        if (parsed != null) {
+          joiningDateController.text = '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year}';
+        } else {
+          joiningDateController.text = raw.toString();
+        }
+      } catch (_) {
+        joiningDateController.text = '';
+      }
+    } else {
+      joiningDateController.text = '';
+    }
     emergencyContactController.text = d?.emergencyContactName ?? '';
     emergencyNumberController.text = d?.emergencyNumber ?? '';
     relationshipController.text = d?.relationship ?? '';
@@ -124,13 +193,36 @@ class StudentProvider extends ChangeNotifier {
       'Aadhar': aadharController.text.trim(),
       'PAN': panController.text.trim(),
       'BloodGroup': selectedBloodGroup ?? '',
-      'JoiningDate': joiningDateController.text.trim(),
+      // Convert human-readable joining date (dd/MM/yyyy) into ISO before sending when possible
+      'JoiningDate': _toIsoDateString(joiningDateController.text.trim()),
       'Course': selectedCourseName ?? '',
       'EmergencyContactName': emergencyContactController.text.trim(),
       'EmergencyNumber': emergencyNumberController.text.trim(),
       'Relationship': relationshipController.text.trim(),
       'Address': addressController.text.trim(),
     };
+  }
+
+  /// Try to convert a human-readable date (dd/MM/yyyy) to ISO yyyy-MM-ddTHH:mm:ssZ (or simple yyyy-MM-dd)
+  String _toIsoDateString(String input) {
+    if (input.isEmpty) return '';
+    try {
+      // Expecting dd/MM/yyyy
+      final parts = input.split('/');
+      if (parts.length == 3) {
+        final d = int.parse(parts[0]);
+        final m = int.parse(parts[1]);
+        final y = int.parse(parts[2]);
+        final dt = DateTime(y, m, d);
+        return dt.toIso8601String();
+      }
+      // fallback: let DateTime.parse try
+      final parsed = DateTime.tryParse(input);
+      if (parsed != null) return parsed.toIso8601String();
+    } catch (_) {
+      // ignore and fallthrough
+    }
+    return input;
   }
 
   /// Create student via API. Returns true on success.

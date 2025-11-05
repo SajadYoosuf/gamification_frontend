@@ -6,7 +6,7 @@ class StudentService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.get("$base_url/studentList");
+      final response = await dio.get("$baseUrl/studentList");
       return response.data;
     } catch (e) {
       rethrow;
@@ -18,7 +18,7 @@ class StudentService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.post("$base_url/", data: data);
+      final response = await dio.post("$baseUrl/", data: data);
       print(response.data??"adsfadfs");
       return response.data;
     } catch (e) {
@@ -31,7 +31,7 @@ class StudentService {
       final dio = DioHelper.getInstance();
 
       final response = await dio.put(
-        "$base_url/updateStudent/$id",
+        "$baseUrl/updateStudent/$id",
         data: data,
       );
       return response.data;
@@ -44,7 +44,18 @@ class StudentService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.delete("$base_url/deleteStudent/$id");
+      final response = await dio.delete("$baseUrl/deleteStudent/$id");
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Fetch a single student by id. Endpoint: GET $baseUrl/oneStudent/:id
+  static Future getStudentById(String id) async {
+    try {
+      final dio = DioHelper.getInstance();
+      final response = await dio.get("$baseUrl/oneStudent/$id");
       return response.data;
     } catch (e) {
       rethrow;

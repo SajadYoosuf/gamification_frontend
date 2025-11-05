@@ -207,9 +207,8 @@ class EmployeeProvider extends ChangeNotifier {
       final response = await EmployeeService.createEmployee(employee.toJson());
 
       if (response != null) {
-        _employees.add(EmployeeModal.fromJson(response));
-        _filtered = List.from(_employees);
-        notifyListeners();
+        // Refresh the full list from server to ensure server-side defaults/relations are applied
+        await fetchEmployees();
         return true;
       }
       return false;
@@ -338,18 +337,12 @@ class EmployeeProvider extends ChangeNotifier {
   }
 
   String? validateAadhar(String? value) {
-    if (value == null || value.isEmpty) return 'Aadhar number is required';
-    if (!RegExp(r'^[0-9]{12}$').hasMatch(value)) {
-      return 'Aadhar must be 12 digits';
-    }
+    // Validation removed: Aadhar is not validated by the form anymore.
     return null;
   }
 
   String? validatePAN(String? value) {
-    if (value == null || value.isEmpty) return 'PAN is required';
-    if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(value)) {
-      return 'Invalid PAN format';
-    }
+    // Validation removed: PAN is not validated by the form anymore.
     return null;
   }
 

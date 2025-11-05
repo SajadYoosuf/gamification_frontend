@@ -58,8 +58,7 @@ class _EmployeeManagementState extends State<EmployeeManagement> {
                   // Attempt to create employee via provider
                   final success = await provider.createEmployee(employee);
                   if (success) {
-                    // Refresh the list from server to ensure consistency
-                    await provider.fetchEmployees();
+                    // createEmployee now refreshes the list, just close dialog
                     Navigator.of(dialogContext).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Employee added successfully')),

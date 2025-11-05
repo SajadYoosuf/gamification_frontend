@@ -13,7 +13,7 @@ class AttendanceService {
   static Future<List<StudentAttendance>> fetchStudentAttendanceRaw() async {
     try {
       final dio = await DioHelper.getInstance();
-      final response = await dio.get('$base_url/student/attendlist');
+      final response = await dio.get('$baseUrl/student/attendlist');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to load student attendance: ${response.statusCode}');
@@ -55,7 +55,7 @@ class AttendanceService {
   static Future<List<StudentAttendance>> fetchEmployeeAttendanceRaw() async {
     try {
       final dio = await DioHelper.getInstance();
-      final response = await dio.get('$base_url/attendlist');
+      final response = await dio.get('$baseUrl/attendlist');
 print(response);
       if (response.statusCode != 200) {
         throw Exception('Failed to load employee attendance: ${response.statusCode}');
@@ -87,4 +87,95 @@ print(response);
       rethrow;
     }
   }
+
+  /// Try to get today's attendance entry for a specific user.
+  ///
+  /// Behavior:
+  /// - First attempts a targeted endpoint: GET $baseUrl/student/attend/today/{userId}
+  /// - If that fails (404 or unexpected), falls back to fetching the full
+  ///   student attend list and client-side filtering by userId + today's date.
+  /// Returns null when there's no attendance entry for today for the user.
+  static Future<StudentAttendance?> getTodayAttendanceForUser(String userId) async {
+    try {
+      final dio = await DioHelper.getInstance();
+print("user id in attendance service $userId");
+      // Try targeted endpoint first (some backends expose this)
+      try {
+        final resp = await dio.get('$baseUrl/student/getAttendByUserId/$userId');
+        print("response from api$resp");
+        if (resp.statusCode == 200) {
+          final body = resp.data;
+          print('AttendanceService.getTodayAttendanceForUser targeted response: $body');
+          if (body == null) return null;
+          // body could be a list or a single object
+          final Map<String, dynamic> map = body is List && body.isNotEmpty ? Map<String, dynamic>.from(body[0]) : Map<String, dynamic>.from(body);
+          return StudentAttendance.fromJson(map);
+        }
+      } catch (_) {
+
+        print('AttendanceService.getTodayAttendanceForUser targeted endpoint failed, falling back');
+        // ignore and fallback
+      }
+
+      // Fallback: fetch the student list and filter
+      final resp = await dio.get('$baseUrl/student/attendlist');
+      if (resp.statusCode != 200) return null;
+      final body = resp.data;
+      final List dataList = body is List
+          ? body
+          : (body is Map && body['data'] is List)
+              ? body['data']
+              : [];
+
+      final today = DateTime.now();
+      StudentAttendance? found;
+      for (final item in dataList) {
+        try {
+          final map = item is String ? json.decode(item) as Map<String, dynamic> : Map<String, dynamic>.from(item);
+          final sa = StudentAttendance.fromJson(map);
+          if ((sa.userId ?? '') == userId) {
+            final entryDate = sa.date;
+            if (entryDate.year == today.year && entryDate.month == today.month && entryDate.day == today.day) {
+              found = sa;
+              break;
+            }
+          }
+        } catch (_) {
+          continue;
+        }
+      }
+
+      return found;
+    } catch (e) {
+      print('AttendanceService.getTodayAttendanceForUser error: $e');
+      rethrow;
+    }
+  }
+
+  /// Post attendance for a student (this covers checkin and checkout updates).
+  ///
+  /// Expected backend: POST $baseUrl/student/attend/{userId}
+  /// Payload can contain: { "date": "yyyy-MM-dd", "Checkin": <iso>, "Checkout": <iso>, "Review": <string>, "Rating": <num> }
+  /// This method returns the updated StudentAttendance object when available.
+  static Future<StudentAttendance?> postAttendanceForUser(String userId, Map<String, dynamic> payload) async {
+    try {
+      final dio = await DioHelper.getInstance();
+      final resp = await dio.post('$baseUrl/student/attend/$userId', data: payload);
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        final body = resp.data;
+        if (body == null) return null;
+        final Map<String, dynamic> map = body is List && body.isNotEmpty ? Map<String, dynamic>.from(body[0]) : Map<String, dynamic>.from(body);
+        return StudentAttendance.fromJson(map);
+      }
+      return null;
+    } catch (e) {
+      print('AttendanceService.postAttendanceForUser error: $e');
+      rethrow;
+    }
+  }
+
+  /// Apply for leave for a student.
+  ///
+  /// Expected backend: POST $baseUrl/student/leave  with { "userId": <id>, "date": "yyyy-MM-dd", "Reason": "..." }
+  // Leave endpoint removed — leave is no longer handled by the client.
 }

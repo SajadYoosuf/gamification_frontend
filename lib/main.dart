@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:novox_edtech_gamification/providers/student_provider.dart';
 import 'package:novox_edtech_gamification/providers/employee_provider.dart';
 import 'package:novox_edtech_gamification/providers/attendance_provider.dart';
+import 'package:novox_edtech_gamification/providers/student_checkin_provider.dart';
 void main() {
   final loginProvider = LoginProvider();
   final appRouter = AppRouter(loginProvider);
@@ -19,6 +20,7 @@ void main() {
         ChangeNotifierProvider.value(value: EmployeeProvider()),
   ChangeNotifierProvider.value(value: StudentProvider()),
   ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+  ChangeNotifierProvider(create: (_) => StudentCheckinProvider()),
 
 
 

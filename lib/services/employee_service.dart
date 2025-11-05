@@ -6,7 +6,7 @@ class EmployeeService {
     try {
       final dio = await DioHelper.getInstance();
 
-      final response = await dio.get("$base_url/employeeList");
+      final response = await dio.get("$baseUrl/employeeList");
       return response.data;
     } catch (e) {
       rethrow;
@@ -17,7 +17,7 @@ class EmployeeService {
     try {
       final dio = await DioHelper.getInstance();
 
-      final response = await dio.post("$base_url/addEmployee", data: data);
+      final response = await dio.post("$baseUrl/addEmployee", data: data);
       return response.data;
     } catch (e) {
       rethrow;
@@ -29,7 +29,7 @@ class EmployeeService {
       final dio = await DioHelper.getInstance();
 
       final response = await dio.put(
-        "$base_url/employeeUpdate/$id",
+        "$baseUrl/employeeUpdate/$id",
         data: data,
       );
       return response.data;
@@ -42,7 +42,7 @@ class EmployeeService {
     try {
       final dio = await DioHelper.getInstance();
 
-      final response = await dio.delete("$base_url/employeeDelete/$id");
+      final response = await dio.delete("$baseUrl/employeeDelete/$id");
       return response.data;
     } catch (e) {
       rethrow;

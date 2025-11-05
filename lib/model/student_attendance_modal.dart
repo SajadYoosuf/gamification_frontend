@@ -53,7 +53,10 @@ class StudentAttendance {
 
                 return StudentAttendance(
                         id: json["_id"]?.toString() ?? '',
-                        userId: json["userId"]?.toString(),
+                    // userId in API can be a nested object or a plain id string.
+                    userId: json['userId'] is Map
+                        ? (json['userId']['_id']?.toString() ?? json['userId'].toString())
+                        : json["userId"]?.toString(),
                         date: parsedDate,
                         status: json["status"]?.toString() ?? '-',
                         checkin: parsedCheckin,
@@ -62,7 +65,8 @@ class StudentAttendance {
                         checkout: parsedCheckout,
                         rating: json["rating"] is int ? json["rating"] as int : int.tryParse(json["rating"]?.toString() ?? ''),
                         review: json["review"]?.toString(),
-                        fullname: json['Fullname']?.toString() ?? json['fullname']?.toString(),
+            // fullname can be on root or nested under userId
+            fullname: json['Fullname']?.toString() ?? json['fullname']?.toString() ?? (json['userId'] is Map ? json['userId']['Fullname']?.toString() ?? json['userId']['fullname']?.toString() : null),
                 );
         }
 
@@ -79,4 +83,9 @@ class StudentAttendance {
         "review": review,
         "Fullname": fullname,
     };
+
+    @override
+    String toString() {
+        return 'StudentAttendance(id: $id, userId: $userId, fullname: $fullname, date: ${date.toIso8601String()}, checkin: ${checkin?.toIso8601String()}, checkout: ${checkout?.toIso8601String()}, status: $status)';
+    }
 }

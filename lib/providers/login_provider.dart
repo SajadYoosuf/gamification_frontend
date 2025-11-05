@@ -117,7 +117,22 @@ class LoginProvider extends ChangeNotifier {
       final message = response['message'] ?? "Login response received";
       if (message.toLowerCase().contains("login successful")) {
         final prefs = await SharedPreferences.getInstance();
+        // store role so the app can restore it on restart
         await prefs.setString(AppConstant.authKeyForLocalStorage, userRoles.toString());
+
+        // If the server returned a data object with id, persist it as currentUserId
+        try {
+          final data = response['data'];
+          if (data != null && data is Map<String, dynamic>) {
+            final id = data['id'] ?? data['_id'] ?? data['Id'] ?? '';
+            if (id != null && id.toString().isNotEmpty) {
+              await prefs.setString('currentUserId', id.toString());
+            }
+          }
+        } catch (_) {
+          // ignore parsing errors; not critical
+        }
+
         _isLoggedIn = true;
         notifyListeners();
         await Future.delayed(Duration(seconds: 2));

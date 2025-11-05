@@ -6,7 +6,7 @@ class LoginService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.post("$base_url/adminLogin",data: data);
+      final response = await dio.post("$baseUrl/adminLogin",data: data);
       return response.data;
     } catch (e) {
       print(e);
@@ -15,9 +15,10 @@ class LoginService {
 
  static Future employeeLogin(data) async {
    try {
+    print(data);
      final dio = DioHelper.getInstance();
 
-     final response = await dio.post("$base_url/employeeLogin",data: data);
+     final response = await dio.post("$baseUrl/employeeLogin",data: data);
      return response.data;
    } catch (e) {
      print(e);
@@ -28,7 +29,7 @@ class LoginService {
    try {
      final dio = DioHelper.getInstance();
 
-     final response = await dio.post("$base_url/login",data: data);
+     final response = await dio.post("$baseUrl/login",data: data);
      return response.data;
    } catch (e) {
      print(e);

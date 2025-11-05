@@ -7,7 +7,7 @@ class CourseService {
   static Future<List<Course>> getAllCourses() async {
     try {
       final dio = await DioHelper.getInstance();
-      final response = await dio.get("$base_url/courses");
+      final response = await dio.get("$baseUrl/courses");
 
       if (response.statusCode == 200) {
         final dynamic body = response.data;
@@ -46,7 +46,7 @@ class CourseService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.post("$base_url/createCourses", data: data);
+      final response = await dio.post("$baseUrl/createCourses", data: data);
       return response.data;
     } catch (e) {
       rethrow;
@@ -56,7 +56,7 @@ class CourseService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.put("$base_url/updateCourse/$id", data: data);
+      final response = await dio.put("$baseUrl/updateCourse/$id", data: data);
       return response.data;
     } catch (e) {
       rethrow;
@@ -66,7 +66,7 @@ class CourseService {
     try {
       final dio = DioHelper.getInstance();
 
-      final response = await dio.delete("$base_url/deleteCourse/$id");
+      final response = await dio.delete("$baseUrl/deleteCourse/$id");
       return response.data;
     } catch (e) {
       rethrow;

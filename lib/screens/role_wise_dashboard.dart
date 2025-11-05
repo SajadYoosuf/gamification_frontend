@@ -9,7 +9,10 @@ import 'package:novox_edtech_gamification/model/role_wise_dashboard_rootes.dart'
 import 'package:novox_edtech_gamification/model/user_roles.dart';
 import 'package:novox_edtech_gamification/screens/admin/dashboard_screen.dart';
 import 'package:novox_edtech_gamification/providers/login_provider.dart';
-
+import 'package:novox_edtech_gamification/screens/student/student_dashboard.dart';
+import 'package:novox_edtech_gamification/screens/student/student_checkin_checkout.dart';
+import 'package:novox_edtech_gamification/screens/employee/employee_dashboard.dart';
+import 'package:novox_edtech_gamification/screens/employee/employee_checkin_checkout.dart';
 class RoleBasedDashboard extends StatefulWidget {
   const RoleBasedDashboard({super.key});
 
@@ -33,13 +36,13 @@ class _RoleBasedDashboardState extends State<RoleBasedDashboard> {
         ];
       case UserRoles.student:
         return [
-          DashboardScreen(role: roleName, screenTitle: 'Dashboard'),
-          DashboardScreen(role: roleName, screenTitle: 'Checkin & Checkout'),
+          StudentDashboard(),
+StudentCheckinCheckout(),
         ];
       case UserRoles.employee:
         return [
-          DashboardScreen(role: roleName, screenTitle: 'Dashboard'),
-          DashboardScreen(role: roleName, screenTitle: 'Checkin & Checkout'),
+EmployeeDashboard()     ,
+EmployeeCheckinCheckout(),       
         ];
       case UserRoles.none:
         return [];
@@ -232,31 +235,22 @@ class _RoleBasedDashboardState extends State<RoleBasedDashboard> {
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: (isMobile || isTablet)
-            ? IconButton(
-                icon: const Icon(Icons.menu),
+     appBar: (isMobile || isTablet)
+          ? AppBar(
+            leading: IconButton(
+                icon: const Icon(Icons.menu, color: Color(0xFF2C3E50)),
                 onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              )
-            : null,
-        title: Image.asset(
-          ImagePaths.companyLogoWithText,
-          fit: BoxFit.fitWidth,
-          width: 100.0,
-          height: 60.0,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () =>
-                Provider.of<LoginProvider>(context, listen: false)
-                    .logOut(context),
-          ),
-          const SizedBox(width: 20),
-        ],
-      ),
+              ),
+              title: Text(
+                currentDestinations[_selectedIndex].label,
+                style: const TextStyle(
+                    color: Color(0xFF2C3E50), fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Colors.white,
+              iconTheme: const IconThemeData(color: Color(0xFF2C3E50)),
+              elevation: 1,
+            )
+          : null,
       drawer:
           (isMobile || isTablet) ? _buildDrawer(currentDestinations, _pages) : null,
       body: Row(

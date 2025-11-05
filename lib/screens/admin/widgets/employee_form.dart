@@ -81,87 +81,174 @@ class _EmployeeFormState extends State<EmployeeForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Top row: Full name (full width)
             _buildTextField(
               controller: provider.nameController,
               label: 'Full Name',
               validator: provider.validateName,
             ),
             const SizedBox(height: 16),
-            _buildTextField(
-              controller: provider.emailController,
-              label: 'Email',
-              keyboardType: TextInputType.emailAddress,
-              validator: provider.validateEmail,
+
+            // Two-column rows for compact desktop look
+            _twoColumn(
+              _buildTextField(
+                controller: provider.emailController,
+                label: 'Email',
+                keyboardType: TextInputType.emailAddress,
+                validator: provider.validateEmail,
+              ),
+              _buildPhoneField(),
             ),
             const SizedBox(height: 16),
-            _buildPhoneField(),
-            const SizedBox(height: 16),
-            _buildAadharField(),
-            const SizedBox(height: 16),
-            _buildPanField(),
-            const SizedBox(height: 16),
-            _buildDateField(context),
-            const SizedBox(height: 16),
-            _buildDropdownField<String>(
-              value: provider.selectedBloodGroup,
-              hint: 'Select Blood Group',
-              items: provider.bloodGroups,
-              onChanged: (value) {
-                provider.setSelectedBloodGroup(value);
-              },
-              validator: (value) => provider.validateSelection(value, 'Blood Group'),
+
+            _twoColumn(
+              _buildAadharField(),
+              _buildPanField(),
             ),
             const SizedBox(height: 16),
-            _buildDropdownField<String>(
-              value: provider.selectedDesignation,
-              hint: 'Select Designation',
-              items: provider.designations,
-              onChanged: (value) {
-                provider.setSelectedDesignation(value);
-              },
-              validator: (value) => provider.validateSelection(value, 'Designation'),
+
+            _twoColumn(
+              _buildDateField(context),
+              _buildDropdownField<String>(
+                value: provider.selectedBloodGroup,
+                hint: 'Select Blood Group',
+                items: provider.bloodGroups,
+                onChanged: (value) {
+                  provider.setSelectedBloodGroup(value);
+                },
+                validator: (value) => provider.validateSelection(value, 'Blood Group'),
+              ),
             ),
             const SizedBox(height: 16),
-            _buildCourseDropdown(),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: provider.emergencyContactController,
-              label: 'Emergency Contact Name',
-              validator: (value) => provider.validateNotEmpty(value, 'Emergency Contact Name'),
+
+            _twoColumn(
+              _buildDropdownField<String>(
+                value: provider.selectedDesignation,
+                hint: 'Select Designation',
+                items: provider.designations,
+                onChanged: (value) {
+                  provider.setSelectedDesignation(value);
+                },
+                validator: (value) => provider.validateSelection(value, 'Designation'),
+              ),
+              _buildCourseDropdown(),
+            ),
+            const SizedBox(height: 24),
+
+            // Emergency contact section title
+            Row(
+              children: const [
+                Icon(Icons.phone, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  'Emergency Contact',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            _threeColumn(
+              _buildTextField(
+                controller: provider.emergencyContactController,
+                label: 'Contact Name',
+                validator: (value) => provider.validateNotEmpty(value, 'Emergency Contact Name'),
+              ),
+              _buildPhoneField(
+                controller: provider.emergencyNumberController,
+                label: 'Contact Number (Self)',
+                isEmergency: true,
+              ),
+              _buildTextField(
+                controller: provider.relationshipController,
+                label: 'Relationship',
+                validator: (value) => provider.validateNotEmpty(value, 'Relationship'),
+              ),
             ),
             const SizedBox(height: 16),
-            _buildPhoneField(
-              controller: provider.emergencyNumberController,
-              label: 'Emergency Contact Number',
-              isEmergency: true,
-            ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: provider.relationshipController,
-              label: 'Relationship with Emergency Contact',
-              validator: (value) => provider.validateNotEmpty(value, 'Relationship'),
-            ),
-            const SizedBox(height: 16),
+
             _buildTextField(
               controller: provider.addressController,
-              label: 'Address',
+              label: 'Communication Address',
               maxLines: 3,
               validator: (value) => provider.validateNotEmpty(value, 'Address'),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+
+            // Actions: Cancel + Register
+            Row(
+              children: [
+                OutlinedButton(
+                  onPressed: () {
+                    // Close dialog or navigate back if parent opened this form in a dialog
+                    if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Cancel'),
                 ),
-              ),
-              child: const Text('Save Employee'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: provider.isLoading ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: provider.isLoading
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.max,
+                            children: const [
+                              SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text('Saving...'),
+                            ],
+                          )
+                        : const Text('Register Employee'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _twoColumn(Widget left, Widget right) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 12),
+        Expanded(child: right),
+      ],
+    );
+  }
+
+  Widget _threeColumn(Widget a, Widget b, Widget c) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 4, child: a),
+        const SizedBox(width: 12),
+        Expanded(flex: 4, child: b),
+        const SizedBox(width: 12),
+        Expanded(flex: 3, child: c),
+      ],
     );
   }
 
@@ -311,23 +398,39 @@ class _EmployeeFormState extends State<EmployeeForm> {
 
   Widget _buildCourseDropdown() {
   return Consumer<CourseProvider>(
-      builder: (context, courseProvider, _) {
-        if (courseProvider.isLoading) return const Center(child: CircularProgressIndicator());
-        if (courseProvider.error != null) return Text('Error: ${courseProvider.error}');
-        final courses = courseProvider.courses;
-        final provider = Provider.of<EmployeeProvider>(context, listen: false);
-        return _buildDropdownField<String>(
-          value: provider.selectecCourseName,
-          hint: 'Select Course',
-          items: courses.map((course) => course.courseName).toList(),
-          onChanged: (value) {
-            provider.setselectecCourseName(value);
-          },
-          validator: (value) => provider.validateSelection(value, 'Course'),
-        );
-      },
-    );
-      
-    
-  }
+    builder: (context, courseProvider, _) {
+      if (courseProvider.isLoading) return const Center(child: CircularProgressIndicator());
+      if (courseProvider.error != null) return Text('Error: ${courseProvider.error}');
+      final courses = courseProvider.courses;
+      final provider = Provider.of<EmployeeProvider>(context, listen: false);
+
+      // Single-select dropdown for Courses Assigned to match the requested UI.
+      return DropdownButtonFormField<String>(
+        value: provider.selectecCourseName,
+        hint: const Text('Select Course'),
+        decoration: InputDecoration(
+          labelText: 'Courses Assigned',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        isExpanded: true,
+        items: courses.map<DropdownMenuItem<String>>((course) {
+          return DropdownMenuItem<String>(
+            value: course.courseName,
+            child: Text(course.courseName),
+          );
+        }).toList(),
+        onChanged: (value) {
+          provider.setselectecCourseName(value);
+        },
+        validator: (value) => provider.validateSelection(value, 'Course'),
+      );
+    },
+  );
+}
 }
