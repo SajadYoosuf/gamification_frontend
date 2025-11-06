@@ -14,7 +14,7 @@ class StudentService {
   }
 
   static Future createStudent(data) async {
-    
+    print(data);
     try {
       final dio = DioHelper.getInstance();
 
