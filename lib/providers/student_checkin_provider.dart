@@ -33,7 +33,20 @@ class StudentCheckinProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final sa = await AttendanceService.getTodayAttendanceForUser(userId);
-      _today = sa;
+      // Ensure the returned attendance is for today's date (server may return nearby dates)
+      if (sa != null) {
+        final entryDate = sa.date.toLocal();
+        final now = DateTime.now().toLocal();
+        if (entryDate.year == now.year && entryDate.month == now.month && entryDate.day == now.day) {
+          _today = sa;
+        } else {
+          // Not today's record - ignore
+          _today = null;
+          print('AttendanceProvider: fetched attendance is not for today (entry: ${entryDate.toIso8601String()})');
+        }
+      } else {
+        _today = null;
+      }
       print('Loaded today attendance: $_today');
     } catch (e) {
       _error = e.toString();

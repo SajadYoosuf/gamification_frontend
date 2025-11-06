@@ -89,7 +89,12 @@ class AttendanceProvider extends ChangeNotifier {
         }
       }
 
-      _studentAttendance = mapped;
+      // Initially show only today's records (filter by date equality)
+      final today = DateTime.now();
+      _studentAttendance = mapped.where((m) {
+        final d = m.date;
+        return d.year == today.year && d.month == today.month && d.day == today.day;
+      }).toList();
     } catch (e) {
       _error = e.toString();
       _studentAttendance = [];
@@ -171,7 +176,12 @@ class AttendanceProvider extends ChangeNotifier {
         }
       }
 
-      _employeeAttendance = mapped;
+      // Initially show only today's records (filter by date equality)
+      final today = DateTime.now();
+      _employeeAttendance = mapped.where((m) {
+        final d = m.date;
+        return d.year == today.year && d.month == today.month && d.day == today.day;
+      }).toList();
     } catch (e) {
       _error = e.toString();
       _employeeAttendance = [];
