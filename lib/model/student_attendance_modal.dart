@@ -1,79 +1,85 @@
 import 'dart:convert';
 
 class StudentAttendance {
-    String id;
-    String? userId; // may be null for some employee records
-    DateTime date;
-    String status;
-    DateTime? checkin;
-    dynamic workingHours;
-    int? v;
-    DateTime? checkout;
-    int? rating;
-    String? review;
-    String? fullname; // some attendance docs store Fullname directly
+  String id;
+  String? userId;
+  DateTime date;
+  String status;
+  DateTime? checkin;
+  dynamic workingHours;
+  int? v;
+  DateTime? checkout;
+  int? rating;
+  String? review;
+  String? fullname;
 
-    StudentAttendance({
-        required this.id,
-        this.userId,
-        required this.date,
-        required this.status,
-        this.checkin,
-        this.workingHours,
-        this.v,
-        this.checkout,
-        this.rating,
-        this.review,
-        this.fullname,
-    });
+  StudentAttendance({
+    required this.id,
+    this.userId,
+    required this.date,
+    required this.status,
+    this.checkin,
+    this.workingHours,
+    this.v,
+    this.checkout,
+    this.rating,
+    this.review,
+    this.fullname,
+  });
 
-    factory StudentAttendance.fromRawJson(String str) => StudentAttendance.fromJson(json.decode(str));
+  factory StudentAttendance.fromJson(Map<String, dynamic> json) {
+    return StudentAttendance(
+      id: json["_id"]?.toString() ?? "",
 
-    String toRawJson() => json.encode(toJson());
+      /// ✅ userId can be string or object
+      userId: json["userId"] is Map
+          ? json["userId"]["_id"]?.toString()
+          : json["userId"]?.toString(),
 
-        factory StudentAttendance.fromJson(Map<String, dynamic> json) {
-                // parse with tolerance for missing/null fields and different key casings
-                DateTime parsedDate = DateTime.tryParse(json["date"]?.toString() ?? '') ?? DateTime.now();
+      /// ✅ date (2025-11-05)
+      date: DateTime.tryParse(json["date"]?.toString() ?? "") ??
+          DateTime.now(),
 
-                DateTime? parsedCheckin;
-                try {
-                    final s = json['Checkin'] ?? json['checkin'];
-                    if (s != null) parsedCheckin = DateTime.tryParse(s.toString());
-                } catch (_) {
-                    parsedCheckin = null;
-                }
+      /// ✅ status
+      status: json["status"]?.toString() ?? "-",
 
-                DateTime? parsedCheckout;
-                try {
-                    final s = json['Checkout'] ?? json['checkout'];
-                    if (s != null) parsedCheckout = DateTime.tryParse(s.toString());
-                } catch (_) {
-                    parsedCheckout = null;
-                }
+      /// ✅ Checkin can be ISO string or null
+      checkin:
+          DateTime.tryParse(json["Checkin"]?.toString() ?? ""),
 
-                return StudentAttendance(
-                        id: json["_id"]?.toString() ?? '',
-                    // userId in API can be a nested object or a plain id string.
-                    userId: json['userId'] is Map
-                        ? (json['userId']['_id']?.toString() ?? json['userId'].toString())
-                        : json["userId"]?.toString(),
-                        date: parsedDate,
-                        status: json["status"]?.toString() ?? '-',
-                        checkin: parsedCheckin,
-                        workingHours: json["WorkingHours"],
-                        v: json["__v"] is int ? json["__v"] as int : int.tryParse(json["__v"]?.toString() ?? ''),
-                        checkout: parsedCheckout,
-                        rating: json["rating"] is int ? json["rating"] as int : int.tryParse(json["rating"]?.toString() ?? ''),
-                        review: json["review"]?.toString(),
-            // fullname can be on root or nested under userId
-            fullname: json['Fullname']?.toString() ?? json['fullname']?.toString() ?? (json['userId'] is Map ? json['userId']['Fullname']?.toString() ?? json['userId']['fullname']?.toString() : null),
-                );
-        }
+      /// ✅ Working hours may be null or number
+      workingHours: json["WorkingHours"],
 
-    Map<String, dynamic> toJson() => {
+      /// ✅ Version
+      v: json["__v"] is int
+          ? json["__v"]
+          : int.tryParse(json["__v"]?.toString() ?? ""),
+
+      /// ✅ Checkout
+      checkout:
+          DateTime.tryParse(json["Checkout"]?.toString() ?? ""),
+
+      /// ✅ rating
+      rating: json["rating"] is int
+          ? json["rating"]
+          : int.tryParse(json["rating"]?.toString() ?? ""),
+
+      /// ✅ review
+      review: json["review"]?.toString(),
+
+      /// ✅ Fullname from nested userId OR root
+      fullname: json["Fullname"]?.toString() ??
+          (json["userId"] is Map
+              ? json["userId"]["Fullname"]?.toString()
+              : null),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
         "_id": id,
         "userId": userId,
-        "date": "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+        "date":
+            "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
         "status": status,
         "Checkin": checkin?.toIso8601String(),
         "WorkingHours": workingHours,
@@ -82,10 +88,5 @@ class StudentAttendance {
         "rating": rating,
         "review": review,
         "Fullname": fullname,
-    };
-
-    @override
-    String toString() {
-        return 'StudentAttendance(id: $id, userId: $userId, fullname: $fullname, date: ${date.toIso8601String()}, checkin: ${checkin?.toIso8601String()}, checkout: ${checkout?.toIso8601String()}, status: $status)';
-    }
+      };
 }

@@ -90,7 +90,7 @@ class _AttendanceTableWidgetState extends State<AttendanceTableWidget> {
           SizedBox(height: isMobile ? 16 : 20),
 
           // Filters section
-          _buildFilters(isMobile, isTablet),
+          // _buildFilters(isMobile, isTablet),
           SizedBox(height: isMobile ? 16 : 20),
 
           // Table section

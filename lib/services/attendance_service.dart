@@ -16,23 +16,27 @@ class AttendanceService {
       final response = await dio.get('$baseUrl/student/attendlist');
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to load student attendance: ${response.statusCode}');
+        throw Exception(
+          'Failed to load student attendance: ${response.statusCode}',
+        );
       }
 
-  final body = response.data;
-  // Debug: print the raw employee attendance response so we can inspect
-  // exact payload shapes in the console (useful for troubleshooting).
-  print('AttendanceService student raw response: $body');
+      final body = response.data;
+      // Debug: print the raw employee attendance response so we can inspect
+      // exact payload shapes in the console (useful for troubleshooting).
+      print('AttendanceService student raw response: $body');
       final List dataList = body is List
           ? body
           : (body is Map && body['data'] is List)
-              ? body['data']
-              : [];
+          ? body['data']
+          : [];
 
       final List<StudentAttendance> results = [];
       for (final item in dataList) {
         try {
-          final map = item is String ? json.decode(item) as Map<String, dynamic> : Map<String, dynamic>.from(item);
+          final map = item is String
+              ? json.decode(item) as Map<String, dynamic>
+              : Map<String, dynamic>.from(item);
           results.add(StudentAttendance.fromJson(map));
         } catch (_) {
           // skip malformed
@@ -56,24 +60,28 @@ class AttendanceService {
     try {
       final dio = await DioHelper.getInstance();
       final response = await dio.get('$baseUrl/attendlist');
-print(response);
+      print(response);
       if (response.statusCode != 200) {
-        throw Exception('Failed to load employee attendance: ${response.statusCode}');
+        throw Exception(
+          'Failed to load employee attendance: ${response.statusCode}',
+        );
       }
 
       final body = response.data;
-        print('employee attendce employee raw response: $body');
+      print('employee attendce employee raw response: $body');
 
       final List dataList = body is List
           ? body
           : (body is Map && body['data'] is List)
-              ? body['data']
-              : [];
+          ? body['data']
+          : [];
 
       final List<StudentAttendance> results = [];
       for (final item in dataList) {
         try {
-          final map = item is String ? json.decode(item) as Map<String, dynamic> : Map<String, dynamic>.from(item);
+          final map = item is String
+              ? json.decode(item) as Map<String, dynamic>
+              : Map<String, dynamic>.from(item);
           results.add(StudentAttendance.fromJson(map));
         } catch (_) {
           // skip malformed
@@ -95,76 +103,61 @@ print(response);
   /// - If that fails (404 or unexpected), falls back to fetching the full
   ///   student attend list and client-side filtering by userId + today's date.
   /// Returns null when there's no attendance entry for today for the user.
-  static Future<StudentAttendance?> getTodayAttendanceForUser(String userId) async {
-    try {
-      final dio = await DioHelper.getInstance();
-print("user id in attendance service $userId");
-      // Try targeted endpoint first (some backends expose this)
-      try {
-        final resp = await dio.get('$baseUrl/student/getAttendByUserId/$userId');
-        print("response from api$resp");
-        if (resp.statusCode == 200) {
-          final body = resp.data;
-          print('AttendanceService.getTodayAttendanceForUser targeted response: $body');
-          if (body == null) return null;
-          // body could be a list or a single object
-          final Map<String, dynamic> map = body is List && body.isNotEmpty ? Map<String, dynamic>.from(body[0]) : Map<String, dynamic>.from(body);
-          return StudentAttendance.fromJson(map);
-        }
-      } catch (_) {
+static Future<StudentAttendance?> getTodayAttendanceForUser(
+  String userId,
+) async {
+  try {
+    final dio = await DioHelper.getInstance();
+    print("user id in attendance service: $userId");
 
-        print('AttendanceService.getTodayAttendanceForUser targeted endpoint failed, falling back');
-        // ignore and fallback
-      }
+    // ✅ First API call only
+    final resp = await dio.get(
+      '$baseUrl/student/getAttendByUserId/$userId',
+    );
 
-      // Fallback: fetch the student list and filter
-      final resp = await dio.get('$baseUrl/student/attendlist');
-      if (resp.statusCode != 200) return null;
+    print("Response from API: ${resp.data}");
+
+    if (resp.statusCode == 200) {
       final body = resp.data;
-      final List dataList = body is List
-          ? body
-          : (body is Map && body['data'] is List)
-              ? body['data']
-              : [];
 
-      final today = DateTime.now();
-      StudentAttendance? found;
-      for (final item in dataList) {
-        try {
-          final map = item is String ? json.decode(item) as Map<String, dynamic> : Map<String, dynamic>.from(item);
-          final sa = StudentAttendance.fromJson(map);
-          if ((sa.userId ?? '') == userId) {
-            final entryDate = sa.date;
-            if (entryDate.year == today.year && entryDate.month == today.month && entryDate.day == today.day) {
-              found = sa;
-              break;
-            }
-          }
-        } catch (_) {
-          continue;
-        }
+      if (body == null) return null;
+
+      // ✅ Extract the "data" object
+      if (body is Map && body["data"] is Map) {
+        final dataMap = Map<String, dynamic>.from(body["data"]);
+        return StudentAttendance.fromJson(dataMap);
       }
-
-      return found;
-    } catch (e) {
-      print('AttendanceService.getTodayAttendanceForUser error: $e');
-      rethrow;
     }
+
+    return null;
+  } catch (e) {
+    print("Error in getTodayAttendanceForUser: $e");
+    return null;
   }
+}
+
 
   /// Post attendance for a student (this covers checkin and checkout updates).
   ///
   /// Expected backend: POST $baseUrl/student/attend/{userId}
   /// Payload can contain: { "date": "yyyy-MM-dd", "Checkin": <iso>, "Checkout": <iso>, "Review": <string>, "Rating": <num> }
   /// This method returns the updated StudentAttendance object when available.
-  static Future<StudentAttendance?> postAttendanceForUser(String userId, Map<String, dynamic> payload) async {
+  static Future<StudentAttendance?> postAttendanceForUser(
+    String userId,
+    Map<String, dynamic> payload,
+  ) async {
     try {
       final dio = await DioHelper.getInstance();
-      final resp = await dio.post('$baseUrl/student/attend/$userId', data: payload);
+      final resp = await dio.post(
+        '$baseUrl/student/attend/$userId',
+        data: payload,
+      );
       if (resp.statusCode == 200 || resp.statusCode == 201) {
         final body = resp.data;
         if (body == null) return null;
-        final Map<String, dynamic> map = body is List && body.isNotEmpty ? Map<String, dynamic>.from(body[0]) : Map<String, dynamic>.from(body);
+        final Map<String, dynamic> map = body is List && body.isNotEmpty
+            ? Map<String, dynamic>.from(body[0])
+            : Map<String, dynamic>.from(body);
         return StudentAttendance.fromJson(map);
       }
       return null;
